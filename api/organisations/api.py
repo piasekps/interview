@@ -45,7 +45,8 @@ class OrganisationCollectionResource(BaseSortingAPI):
 
         resp.media = self.build_response(
             total=total_objects,
-            data=paginated_filtered_result
+            data=paginated_filtered_result,
+            version=req.context['version']
         )
 
     def on_post(self, req, resp):
@@ -90,18 +91,23 @@ class OrganisationCollectionResource(BaseSortingAPI):
         return filters
 
     @staticmethod
-    def build_response(total, data):
+    def build_response(total, data, version):
         """
         Build response in proper format
 
         Args:
             total (int): total number of airports
             data (list): list of Airport instances
+            version (str|None): Current API version
 
         Returns:
             (dict) with basic airport data
         """
         keys = ('id', 'name')
+
+        if version and version > 1.0:
+            keys += ('status_name',)
+
         return {
             'total': total,
             'data': [item.convert_object_to_dict(keys) for item in data]
@@ -130,7 +136,7 @@ class OrganisationResource:
         Returns:
             (falcon.response.Response): Organisation instance details
         """
-        resp.media = self.build_response(req.context['instance'])
+        resp.media = self.build_response(req.context['instance'], req.context['version'])
 
     def on_patch(self, req, resp, object_id):
         """
@@ -178,18 +184,28 @@ class OrganisationResource:
         resp.status = falcon.HTTP_204 if response else falcon.HTTP_404
 
     @staticmethod
-    def build_response(instance):
+    def build_response(instance, version):
         """
         Create dict with full organisation data.
 
         Args:
             instance (Organisation): Organisation instance
+            version (str|None): Current API version
 
         Returns:
             (dict): Organisation instance details
         """
         keys = ('id', 'name', 'status_name')
+
+        if version and version > 1.0:
+            keys += ('enable_user_login', )
+
         response = instance.convert_object_to_dict(keys)
 
-        # response['users'] = [item.id for item in instance.users]
+        if version and version > 1.0:
+            response['users'] = [
+                item.convert_object_to_dict(('id', 'name', 'email', 'state_name'))
+                for item in instance.users
+            ]
+
         return response

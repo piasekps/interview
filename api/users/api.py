@@ -38,7 +38,8 @@ class UserCollectionResource(BaseSortingAPI):
 
         resp.media = self.build_response(
             total=total_objects,
-            data=paginated_filtered_result
+            data=paginated_filtered_result,
+            version=req.context['version']
         )
 
     def on_post(self, req, resp):
@@ -54,7 +55,12 @@ class UserCollectionResource(BaseSortingAPI):
 
         user = self.model.create(db_session, **serializer)
         resp.status = falcon.HTTP_201
-        resp.media = user.convert_object_to_dict(('id', 'name', 'email'))
+        keys = ('id', 'name', 'email')
+
+        if req.context['version'] and req.context['version'] > 1:
+            keys += ('state_name', )
+
+        resp.media = user.convert_object_to_dict(keys)
 
     def build_query_filters(self, params):
         """
@@ -79,11 +85,20 @@ class UserCollectionResource(BaseSortingAPI):
         return filters
 
     @staticmethod
-    def build_response(total, data):
+    def build_response(total, data, version):
         """
         Build response in proper format
+
+        Args:
+            total (int): total number of airports
+            data (list): list of Airport instances
+            version (str|None): Current API version
         """
         keys = ('id', 'name', 'email')
+
+        if version and version > 1:
+            keys += ('state_name', )
+
         return {
             'total': total,
             'data': [item.convert_object_to_dict(keys) for item in data]
@@ -112,7 +127,7 @@ class UserResource:
         Returns:
             (falcon.response.Response): User instance details
         """
-        resp.media = self.build_response(req.context['instance'])
+        resp.media = self.build_response(req.context['instance'], req.context['version'])
 
     def on_patch(self, req, resp, object_id):
         """
@@ -152,17 +167,22 @@ class UserResource:
         resp.status = falcon.HTTP_204 if response else falcon.HTTP_404
 
     @staticmethod
-    def build_response(instance):
+    def build_response(instance, version):
         """
         Create dict with full user data.
 
         Args:
             instance (User): User instance
+            version (str|None): Current API version
 
         Returns:
             (dict): User instance details
         """
         keys = ('id', 'name', 'email')
+
+        if version and version > 1:
+            keys += ('state_name', )
+
         response = instance.convert_object_to_dict(keys)
         response['organisation'] = instance.organisation.name
         return response
