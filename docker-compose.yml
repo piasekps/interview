@@ -1,0 +1,28 @@
+version: '3.4'
+services:
+  db:
+    image: postgres:11-alpine
+    restart: unless-stopped
+    volumes:
+      - .postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=interview
+      - POSTGRES_USER=interview
+      - POSTGRES_PASSWORD=interview
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./api:/interview
+    ports:
+      - "8081:8081"
+    depends_on:
+      - db
+    environment:
+      - PYTHONPATH=/interview
+      - POSTGRES_HOST=db
+    working_dir: /interview
+    command: gunicorn --reload --bind=0.0.0.0:8081 --timeout 3600 app:app
