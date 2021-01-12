@@ -1,5 +1,6 @@
 from falcon import HTTPNotFound
 
+from core.utils import api_version_to_float
 from settings import API_VERSIONS
 
 
@@ -21,3 +22,4 @@ class VersionMiddleware:
             )
 
         req.context['api_version'] = version
+        req.context['version'] = api_version_to_float(version)
