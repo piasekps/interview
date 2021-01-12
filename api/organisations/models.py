@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Boolean, Column, Integer, String
 from sqlalchemy.orm import relationship
 
 from core.db.base import Base
@@ -11,6 +11,7 @@ class Organisation(Base):
     name = Column(String(128), nullable=False)
     status = Column(Integer, nullable=False, default=OrganisationStatus.ENABLED.value)
     users = relationship('User')
+    enable_user_login = Column(Boolean, default=False)
 
     @property
     def status_name(self):

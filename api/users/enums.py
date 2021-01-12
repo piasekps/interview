@@ -4,6 +4,8 @@ from core.enums import BaseEnum
 
 
 @unique
-class OrganisationStatus(BaseEnum):
+class UserState(BaseEnum):
     ENABLED = 0
     DISABLED = 1
+    BLOCKED = 2
+    DELETED = 3
